@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.db
+*.db-shm
+*.db-wal
+src/XmlFiscal.Web/data/
+src/XmlFiscal.Web/xml-archive/
+TestResults/

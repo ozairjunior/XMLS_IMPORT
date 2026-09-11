@@ -1,0 +1,80 @@
+@page "/importar"
+@inject IImportService ImportService
+@inject ICompanyService CompanyService
+@inject ImportOptions ImportOptions
+@implements IDisposable
+<PageTitle>Importar XML | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Importar XML</h1><p>NF-e modelo 55 e NFC-e modelo 65, com processamento isolado por arquivo.</p></div></div>
+<section class="panel">
+    <div class="form-grid three">
+        <label><span>Empresa preferencial</span><select @bind="_companyValue"><option value="">Identificar automaticamente</option>@foreach (var company in _companies.Where(x => x.IsActive)) { <option value="@company.Id">@company.LegalName</option> }</select></label>
+        <label class="wide"><span>Pasta no servidor</span><input @bind="_folder" placeholder="Ex.: C:\XMLs ou /dados/xml" /></label>
+        <label class="checkbox"><input type="checkbox" @bind="_recursive" /> Incluir subpastas</label>
+    </div>
+    <div class="actions"><button class="button primary" disabled="@_running" @onclick="ImportFolderAsync">Importar pasta</button><button class="button danger" disabled="@(!_running)" @onclick="Cancel">Cancelar</button></div>
+</section>
+<section class="panel">
+    <h2>Ou selecione vários arquivos</h2>
+    <p class="muted-text">Os arquivos são enviados para uma área temporária e removidos após o processamento.</p>
+    <InputFile OnChange="ImportUploadsAsync" multiple accept=".xml,text/xml,application/xml" disabled="@_running" />
+</section>
+@if (_progress is not null)
+{
+    var percent = _progress.Discovered == 0 ? 0 : Math.Min(100, (int)Math.Round(_progress.Processed * 100d / _progress.Discovered));
+    <section class="panel progress-panel">
+        <div class="progress-head"><strong>Progresso</strong><span>@percent%</span></div>
+        <div class="progress-track"><div style="width:@percent%"></div></div>
+        <div class="progress-stats"><span>Processados <strong>@_progress.Processed</strong></span><span>Importados <strong>@_progress.Imported</strong></span><span>Ignorados <strong>@_progress.Ignored</strong></span><span>Duplicados <strong>@_progress.Duplicated</strong></span><span>Erros <strong>@_progress.Errors</strong></span></div>
+        @if (!string.IsNullOrWhiteSpace(_progress.CurrentFile)) { <small>Arquivo atual: @_progress.CurrentFile</small> }
+    </section>
+}
+@if (_summary is not null)
+{
+    <div class="alert success">Lote @_summary.BatchId concluído: @_summary.Imported importado(s), @_summary.Duplicated duplicado(s), @_summary.Ignored ignorado(s) e @_summary.Errors erro(s).</div>
+}
+@if (_error is not null) { <div class="alert error">@_error</div> }
+@code {
+    private List<CompanyListItemDto> _companies = [];
+    private string _companyValue = ""; private string _folder = ""; private bool _recursive = true;
+    private bool _running; private ImportProgressDto? _progress; private ImportSummaryDto? _summary; private string? _error;
+    private CancellationTokenSource? _cts;
+    protected override async Task OnInitializedAsync() => _companies = (await CompanyService.GetAllAsync()).ToList();
+    private Guid? SelectedCompany => Guid.TryParse(_companyValue, out var id) ? id : null;
+    private async Task ImportFolderAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_folder)) { _error = "Informe a pasta no servidor."; return; }
+        await RunAsync((progress, ct) => ImportService.ImportFolderAsync(new ImportFolderRequest(_folder, SelectedCompany, _recursive), progress, ct));
+    }
+    private async Task ImportUploadsAsync(InputFileChangeEventArgs args)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "XmlFiscalUploads", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var paths = new List<string>();
+            foreach (var file in args.GetMultipleFiles(10_000))
+            {
+                var safeName = Path.GetFileName(file.Name);
+                var path = Path.Combine(root, $"{Guid.NewGuid():N}-{safeName}");
+                await using var source = file.OpenReadStream(ImportOptions.MaximumFileSizeBytes);
+                await using var target = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 128 * 1024, useAsync: true);
+                await source.CopyToAsync(target);
+                paths.Add(path);
+            }
+            await RunAsync((progress, ct) => ImportService.ImportFilesAsync(new ImportFilesRequest(paths, SelectedCompany, "Upload pela interface web", DeleteFilesAfterImport: true), progress, ct));
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { } }
+    }
+    private async Task RunAsync(Func<IProgress<ImportProgressDto>, CancellationToken, Task<ImportSummaryDto>> action)
+    {
+        _running = true; _error = null; _summary = null; _progress = null; _cts = new CancellationTokenSource();
+        var progress = new Progress<ImportProgressDto>(value => { _progress = value; StateHasChanged(); });
+        try { _summary = await action(progress, _cts.Token); }
+        catch (OperationCanceledException) { _error = "Importação cancelada. Os arquivos já concluídos foram preservados."; }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _running = false; _cts.Dispose(); _cts = null; }
+    }
+    private void Cancel() => _cts?.Cancel();
+    public void Dispose() { _cts?.Cancel(); _cts?.Dispose(); }
+}

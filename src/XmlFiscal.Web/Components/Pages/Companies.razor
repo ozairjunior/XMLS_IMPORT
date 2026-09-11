@@ -1,0 +1,55 @@
+@page "/empresas"
+@inject ICompanyService CompanyService
+<PageTitle>Empresas | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Empresas analisadas</h1><p>O CNPJ configurado determina se cada documento é entrada ou saída.</p></div></div>
+<div class="two-column">
+    <section class="panel">
+        <h2>@(_model.Id is null ? "Nova empresa" : "Editar empresa")</h2>
+        @if (_message is not null) { <div class="alert @(_isError ? "error" : "success")">@_message</div> }
+        <EditForm Model="_model" OnValidSubmit="SaveAsync">
+            <div class="form-grid">
+                <label><span>CPF/CNPJ</span><InputText @bind-Value="_model.TaxId" placeholder="Somente números ou formatado" /></label>
+                <label><span>Razão social</span><InputText @bind-Value="_model.LegalName" /></label>
+                <label><span>Nome fantasia</span><InputText @bind-Value="_model.TradeName" /></label>
+                <label class="checkbox"><InputCheckbox @bind-Value="_model.IsActive" /> Empresa ativa</label>
+            </div>
+            <div class="actions"><button class="button primary" disabled="@_saving">Salvar</button><button type="button" class="button secondary" @onclick="Reset">Limpar</button></div>
+        </EditForm>
+    </section>
+    <section class="panel">
+        <h2>Cadastros</h2>
+        @if (_companies.Count == 0) { <p class="empty">Nenhuma empresa cadastrada.</p> }
+        else
+        {
+            <div class="table-wrap"><table><thead><tr><th>CPF/CNPJ</th><th>Razão social</th><th>Status</th><th></th></tr></thead><tbody>
+            @foreach (var company in _companies)
+            {
+                <tr><td>@FormatTaxId(company.TaxId)</td><td><strong>@company.LegalName</strong><small>@company.TradeName</small></td><td><span class="badge @(company.IsActive ? "ok" : "muted")">@(company.IsActive ? "Ativa" : "Inativa")</span></td><td><button class="link-button" @onclick="() => Edit(company)">Editar</button></td></tr>
+            }
+            </tbody></table></div>
+        }
+    </section>
+</div>
+@code {
+    private List<CompanyListItemDto> _companies = [];
+    private CompanyForm _model = new();
+    private string? _message; private bool _isError; private bool _saving;
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    private async Task ReloadAsync() => _companies = (await CompanyService.GetAllAsync()).ToList();
+    private async Task SaveAsync()
+    {
+        _saving = true; _message = null;
+        try
+        {
+            await CompanyService.SaveAsync(new CompanyUpsertRequest(_model.Id, _model.TaxId, _model.LegalName, _model.TradeName, _model.IsActive));
+            _message = "Empresa salva."; _isError = false; Reset(keepMessage: true); await ReloadAsync();
+        }
+        catch (Exception ex) { _message = ex.Message; _isError = true; }
+        finally { _saving = false; }
+    }
+    private void Edit(CompanyListItemDto item) => _model = new() { Id = item.Id, TaxId = item.TaxId, LegalName = item.LegalName, TradeName = item.TradeName, IsActive = item.IsActive };
+    private void Reset() => Reset(false);
+    private void Reset(bool keepMessage) { _model = new(); if (!keepMessage) _message = null; }
+    private static string FormatTaxId(string taxId) => taxId.Length == 14 ? $"{taxId[..2]}.{taxId[2..5]}.{taxId[5..8]}/{taxId[8..12]}-{taxId[12..]}" : taxId;
+    private sealed class CompanyForm { public Guid? Id { get; set; } public string TaxId { get; set; } = ""; public string LegalName { get; set; } = ""; public string? TradeName { get; set; } public bool IsActive { get; set; } = true; }
+}

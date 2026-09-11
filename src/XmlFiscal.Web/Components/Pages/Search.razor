@@ -1,0 +1,69 @@
+@page "/pesquisa"
+@inject ISearchQueryService SearchService
+<PageTitle>Pesquisa | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Pesquisa</h1><p>Clientes, fornecedores, produtos, notas, chaves e períodos.</p></div></div>
+<section class="panel">
+    <div class="form-grid three">
+        <label class="wide"><span>Termo</span><input @bind="_term" @onkeydown="OnKeyDown" placeholder="Nome, CPF/CNPJ, GTIN, NCM, número ou chave" /></label>
+        <label><span>Data inicial</span><InputDate @bind-Value="_start" /></label>
+        <label><span>Data final</span><InputDate @bind-Value="_end" /></label>
+    </div>
+    <div class="actions"><button class="button primary" @onclick="SearchAsync" disabled="@_loading">Pesquisar</button></div>
+</section>
+@if (_error is not null) { <div class="alert error">@_error</div> }
+<section class="panel">
+@if (_loading) { <div class="loading">Pesquisando…</div> }
+else if (_searched && _results.Count == 0) { <p class="empty">Nenhum resultado encontrado.</p> }
+else if (_results.Count > 0)
+{
+    <div class="table-wrap"><table><thead><tr><th>Categoria</th><th>Resultado</th><th>Data</th><th>Valor</th></tr></thead><tbody>
+    @foreach (var result in _results)
+    {
+        <tr><td><span class="badge">@result.Category</span></td><td><strong>@result.PrimaryText</strong><small>@result.SecondaryText</small></td><td>@result.Date?.ToLocalTime().ToString("dd/MM/yyyy")</td><td>@(result.Amount?.ToString("C", CultureInfo.GetCultureInfo("pt-BR")))</td></tr>
+    }
+    </tbody></table></div>
+}
+else { <p class="empty">Informe um termo ou período para pesquisar.</p> }
+</section>
+@code {
+    private string? _term; private DateTime? _start; private DateTime? _end; private bool _loading; private bool _searched; private string? _error;
+    private List<SearchResultDto> _results = [];
+    private async Task SearchAsync()
+    {
+    _loading = true;
+    _error = null;
+
+    try
+    {
+        DateTimeOffset? start = _start.HasValue
+            ? new DateTimeOffset(
+                _start.Value.Date,
+                TimeZoneInfo.Local.GetUtcOffset(_start.Value.Date))
+            : null;
+
+        var endDate = _end?.Date.AddDays(1).AddTicks(-1);
+
+        DateTimeOffset? end = endDate.HasValue
+            ? new DateTimeOffset(
+                endDate.Value,
+                TimeZoneInfo.Local.GetUtcOffset(endDate.Value))
+            : null;
+
+        _results = (
+            await SearchService.SearchAsync(
+                new SearchRequest(_term, start, end)))
+            .ToList();
+
+        _searched = true;
+    }
+    catch (Exception ex)
+    {
+        _error = ex.Message;
+    }
+    finally
+    {
+        _loading = false;
+    }
+    }
+    private async Task OnKeyDown(KeyboardEventArgs args) { if (args.Key == "Enter") await SearchAsync(); }
+}

@@ -1,0 +1,35 @@
+@page "/exportacoes"
+@inject IExportService ExportService
+@inject IJSRuntime JS
+<PageTitle>Exportações | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Exportações</h1><p>Extraia cadastros e movimentos de forma independente.</p></div></div>
+<section class="panel narrow">
+    <div class="form-grid">
+        <label><span>Conjunto de dados</span><InputSelect @bind-Value="_dataset">
+            <option value="@ExportDataset.Customers">Clientes</option><option value="@ExportDataset.Suppliers">Fornecedores</option>
+            <option value="@ExportDataset.Products">Mercadorias</option><option value="@ExportDataset.FiscalDocuments">Notas fiscais</option>
+            <option value="@ExportDataset.FiscalDocumentItems">Itens das notas</option><option value="@ExportDataset.AccountsPayable">Contas a pagar</option>
+            <option value="@ExportDataset.AccountsReceivable">Contas a receber</option><option value="@ExportDataset.ProductsAwaitingReview">Produtos para validar</option>
+        </InputSelect></label>
+        <label><span>Formato</span><InputSelect @bind-Value="_format"><option value="@ExportFormat.Csv">CSV</option><option value="@ExportFormat.Xlsx">Excel (.xlsx)</option></InputSelect></label>
+    </div>
+    <div class="actions"><button class="button primary" @onclick="DownloadAsync" disabled="@_working">Gerar arquivo</button></div>
+    @if (_message is not null) { <div class="alert @(_error ? "error" : "success")">@_message</div> }
+</section>
+@code {
+    private ExportDataset _dataset = ExportDataset.Products; private ExportFormat _format = ExportFormat.Xlsx; private bool _working; private bool _error; private string? _message;
+    private async Task DownloadAsync()
+    {
+        _working = true; _message = null;
+        try
+        {
+            var file = await ExportService.ExportAsync(_dataset, _format);
+            await using var stream = new MemoryStream(file.Content);
+            using var reference = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("xmlFiscal.downloadFileFromStream", file.FileName, reference);
+            _message = $"Arquivo {file.FileName} gerado."; _error = false;
+        }
+        catch (Exception ex) { _message = ex.Message; _error = true; }
+        finally { _working = false; }
+    }
+}

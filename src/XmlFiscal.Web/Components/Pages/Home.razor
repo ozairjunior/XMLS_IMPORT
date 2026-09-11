@@ -1,0 +1,41 @@
+@page "/"
+@inject IDashboardQueryService DashboardService
+<PageTitle>Dashboard | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Dashboard</h1><p>Visão consolidada da base fiscal importada.</p></div><button class="button secondary" @onclick="LoadAsync">Atualizar</button></div>
+@if (_loading)
+{
+    <div class="loading">Carregando indicadores…</div>
+}
+else if (_error is not null)
+{
+    <div class="alert error">@_error</div>
+}
+else if (_dashboard is not null)
+{
+    <section class="metric-grid">
+        <MetricCard Label="XMLs importados" Value="_dashboard.XmlProcessed" Hint="Arquivos aceitos" />
+        <MetricCard Label="Notas fiscais" Value="_dashboard.FiscalDocuments" />
+        <MetricCard Label="Clientes" Value="_dashboard.Customers" />
+        <MetricCard Label="Fornecedores" Value="_dashboard.Suppliers" />
+        <MetricCard Label="Produtos únicos" Value="_dashboard.UniqueProducts" />
+        <MetricCard Label="Produtos com GTIN" Value="_dashboard.ProductsWithGtin" />
+        <MetricCard Label="Produtos sem GTIN" Value="_dashboard.ProductsWithoutGtin" />
+        <MetricCard Label="Aguardando validação" Value="_dashboard.ProductsAwaitingReview" />
+        <MetricCard Label="Contas a pagar" Value="_dashboard.AccountsPayable" />
+        <MetricCard Label="Contas a receber" Value="_dashboard.AccountsReceivable" />
+        <MetricCard Label="Erros de importação" Value="_dashboard.ImportErrors" />
+    </section>
+}
+@code {
+    private DashboardDto? _dashboard;
+    private bool _loading;
+    private string? _error;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _loading = true; _error = null;
+        try { _dashboard = await DashboardService.GetAsync(); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+}

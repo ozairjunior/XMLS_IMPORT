@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="..\XmlFiscal.Domain\XmlFiscal.Domain.csproj" /></ItemGroup>
+</Project>

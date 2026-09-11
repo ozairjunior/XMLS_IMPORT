@@ -1,0 +1,56 @@
+@page "/produtos-validar"
+@inject IProductReviewService ReviewService
+<PageTitle>Produtos para validar | XML Fiscal</PageTitle>
+<div class="page-heading"><div><h1>Produtos para validar</h1><p>Apenas correspondências duvidosas; nenhuma delas foi mesclada automaticamente.</p></div><button class="button secondary" @onclick="LoadAsync">Atualizar</button></div>
+@if (_message is not null) { <div class="alert @(_error ? "error" : "success")">@_message</div> }
+<section class="panel">
+@if (_loading) { <div class="loading">Carregando sugestões…</div> }
+else if (_items.Count == 0) { <p class="empty">Não há produtos aguardando validação.</p> }
+else
+{
+    <div class="review-list">
+    @foreach (var item in _items)
+    {
+        <article class="review-card">
+            <div class="review-score"><strong>@item.Score.ToString("0.##")%</strong><span>score</span></div>
+            <div class="review-products">
+                <div><small>Produto encontrado</small><h3>@item.SourceDescription</h3><p>GTIN: @(item.SourceGtin ?? "SEM GTIN") · NCM: @(item.SourceNcm ?? "N/D")</p></div>
+                <span class="arrow">⇄</span>
+                <div><small>Possível correspondente</small><h3>@item.CandidateDescription</h3><p>GTIN: @(item.CandidateGtin ?? "SEM GTIN") · NCM: @(item.CandidateNcm ?? "N/D")</p></div>
+            </div>
+            <p class="reason">@item.Reason · similaridade descritiva @item.DescriptionSimilarity.ToString("P1")</p>
+            <div class="actions wrap">
+                <button class="button primary" disabled="@_working" @onclick="() => DecideAsync(item.SuggestionId, ProductMatchDecisionType.SameProduct)">Mesmo produto</button>
+                <button class="button secondary" disabled="@_working" @onclick="() => DecideAsync(item.SuggestionId, ProductMatchDecisionType.DifferentProducts)">Produtos diferentes</button>
+                <button class="button secondary" disabled="@_working" @onclick="() => DecideAsync(item.SuggestionId, ProductMatchDecisionType.MergeProducts)">Mesclar cadastros</button>
+                <button class="link-button" disabled="@_working" @onclick="() => DecideAsync(item.SuggestionId, ProductMatchDecisionType.IgnoreSuggestion)">Ignorar sugestão</button>
+            </div>
+        </article>
+    }
+    </div>
+}
+</section>
+@code {
+    private List<ProductReviewItemDto> _items = []; private bool _loading; private bool _working; private bool _error; private string? _message;
+    protected override Task OnInitializedAsync() => LoadAsync();
+    private async Task LoadAsync()
+    {
+        _loading = true; _message = null;
+        try { _items = (await ReviewService.GetPendingAsync()).ToList(); }
+        catch (Exception ex) { _message = ex.Message; _error = true; }
+        finally { _loading = false; }
+    }
+    private async Task DecideAsync(Guid id, ProductMatchDecisionType decision)
+    {
+        _working = true; _message = null;
+        try
+        {
+            await ReviewService.DecideAsync(new ProductReviewDecisionRequest(id, decision));
+            _items = (await ReviewService.GetPendingAsync()).ToList();
+            _message = "Decisão registrada e reaproveitável em importações futuras.";
+            _error = false;
+        }
+        catch (Exception ex) { _message = ex.Message; _error = true; }
+        finally { _working = false; }
+    }
+}

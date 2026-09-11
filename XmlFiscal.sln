@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFiscal.Domain", "src\XmlFiscal.Domain\XmlFiscal.Domain.csproj", "{D52AB5FE-7B68-4C5E-A641-9C0764602E31}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFiscal.Application", "src\XmlFiscal.Application\XmlFiscal.Application.csproj", "{66E4D29B-31B7-4016-9AA8-B4DCC502412F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFiscal.Infrastructure", "src\XmlFiscal.Infrastructure\XmlFiscal.Infrastructure.csproj", "{B3BE78E0-F038-43C5-98BB-8429DBD88645}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFiscal.Web", "src\XmlFiscal.Web\XmlFiscal.Web.csproj", "{B1D1913A-1D5A-4CBD-914A-8B3852A9B3BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFiscal.Tests", "tests\XmlFiscal.Tests\XmlFiscal.Tests.csproj", "{03205D1F-B995-4869-B48C-2923DFE31EEB}"
+EndProject
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|Any CPU = Debug|Any CPU
+    Release|Any CPU = Release|Any CPU
+  EndGlobalSection
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+    {D52AB5FE-7B68-4C5E-A641-9C0764602E31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {D52AB5FE-7B68-4C5E-A641-9C0764602E31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {D52AB5FE-7B68-4C5E-A641-9C0764602E31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {D52AB5FE-7B68-4C5E-A641-9C0764602E31}.Release|Any CPU.Build.0 = Release|Any CPU
+    {66E4D29B-31B7-4016-9AA8-B4DCC502412F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {66E4D29B-31B7-4016-9AA8-B4DCC502412F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {66E4D29B-31B7-4016-9AA8-B4DCC502412F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {66E4D29B-31B7-4016-9AA8-B4DCC502412F}.Release|Any CPU.Build.0 = Release|Any CPU
+    {B3BE78E0-F038-43C5-98BB-8429DBD88645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {B3BE78E0-F038-43C5-98BB-8429DBD88645}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {B3BE78E0-F038-43C5-98BB-8429DBD88645}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {B3BE78E0-F038-43C5-98BB-8429DBD88645}.Release|Any CPU.Build.0 = Release|Any CPU
+    {B1D1913A-1D5A-4CBD-914A-8B3852A9B3BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {B1D1913A-1D5A-4CBD-914A-8B3852A9B3BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {B1D1913A-1D5A-4CBD-914A-8B3852A9B3BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {B1D1913A-1D5A-4CBD-914A-8B3852A9B3BE}.Release|Any CPU.Build.0 = Release|Any CPU
+    {03205D1F-B995-4869-B48C-2923DFE31EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {03205D1F-B995-4869-B48C-2923DFE31EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {03205D1F-B995-4869-B48C-2923DFE31EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {03205D1F-B995-4869-B48C-2923DFE31EEB}.Release|Any CPU.Build.0 = Release|Any CPU
+  EndGlobalSection
+EndGlobal

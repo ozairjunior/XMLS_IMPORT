@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\XmlFiscal.Application\XmlFiscal.Application.csproj" />
+    <ProjectReference Include="..\XmlFiscal.Infrastructure\XmlFiscal.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

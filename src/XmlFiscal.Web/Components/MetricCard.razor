@@ -1,0 +1,10 @@
+<article class="metric-card">
+    <span>@Label</span>
+    <strong>@Value.ToString("N0", CultureInfo.GetCultureInfo("pt-BR"))</strong>
+    @if (!string.IsNullOrWhiteSpace(Hint)) { <small>@Hint</small> }
+</article>
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public long Value { get; set; }
+    [Parameter] public string? Hint { get; set; }
+}
